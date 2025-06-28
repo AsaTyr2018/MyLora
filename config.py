@@ -17,3 +17,6 @@ TEMPLATE_DIR = BASE_DIR / "loradb" / "templates"
 
 # Directory containing plugin folders
 PLUGINS_DIR = BASE_DIR / "plugins"
+
+# Path to the watchdog script used to restart the server
+REFRESH_SCRIPT = BASE_DIR / "refresh_server.sh"
