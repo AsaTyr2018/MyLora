@@ -6,6 +6,8 @@ from typing import Dict, List, Any
 import pluggy
 from fastapi import FastAPI
 
+from .db import PluginStateDB
+
 pm_namespace = "mylora"
 
 hookspec = pluggy.HookspecMarker(pm_namespace)
@@ -23,21 +25,19 @@ class HookSpecs:
 
 
 class PluginManager:
-    def __init__(self, plugins_dir: Path) -> None:
+    def __init__(self, plugins_dir: Path, db_path: Path | None = None) -> None:
         self.plugins_dir = Path(plugins_dir)
         self.plugins_dir.mkdir(exist_ok=True)
-        self.status_path = self.plugins_dir / "plugins_status.json"
-        if self.status_path.exists():
-            self.status: Dict[str, bool] = json.loads(self.status_path.read_text())
-        else:
-            self.status = {}
+        self.db = PluginStateDB(Path(db_path or "loradb/plugin_state.db"))
+        self.status: Dict[str, bool] = self.db.get_all()
         self.manager = pluggy.PluginManager(pm_namespace)
         self.manager.add_hookspecs(HookSpecs)
         self.loaded: Dict[str, object] = {}
         self.loaded_routes: Dict[str, List[Any]] = {}
 
     def _save_status(self) -> None:
-        self.status_path.write_text(json.dumps(self.status, indent=2))
+        for pid, enabled in self.status.items():
+            self.db.set_state(pid, enabled)
 
     def discover(self) -> List[Dict[str, str]]:
         """Return list of discovered plugins with metadata and enabled flag."""
@@ -100,13 +100,11 @@ class PluginManager:
         self.loaded.pop(plugin_id, None)
         self.loaded_routes.pop(plugin_id, None)
 
-    def enable(self, plugin_id: str, app: FastAPI) -> None:
+    def enable(self, plugin_id: str) -> None:
         self.status[plugin_id] = True
         self._save_status()
-        self._load_plugin(plugin_id, app)
 
-    def disable(self, plugin_id: str, app: FastAPI | None = None) -> None:
+    def disable(self, plugin_id: str) -> None:
         self.status[plugin_id] = False
         self._save_status()
-        self._unload_plugin(plugin_id, app)
 
