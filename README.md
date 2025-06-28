@@ -71,7 +71,7 @@ Manage all categories in one place. Create new entries and remove unused ones. A
 ![grafik](https://github.com/user-attachments/assets/28cfaab7-c6fc-471e-8ef1-87a21fcae47f)
 
 ### Plugin admin `/plugins`
-Toggle installed plugins on or off. The selected state is stored in the database and is applied when the server is refreshed. The refresh action now calls `refresh_server.sh`, which restarts the `mylora` service via systemd. Use the **Refresh Server** button after changing plugin state.
+Toggle installed plugins on or off. The selected state is stored in the database and is applied when the server is refreshed. The refresh action now calls `refresh_server.sh`, which restarts the application by killing the running process and launching `main.py` again. Use the **Refresh Server** button after changing plugin state.
 
 ## Bulk import
 Use `bulk_import.py` to ingest an existing collection:
