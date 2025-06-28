@@ -33,4 +33,7 @@ async def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    config = uvicorn.Config(app, host="0.0.0.0", port=5000)
+    server = uvicorn.Server(config)
+    app.state.uvicorn_server = server
+    server.run()
