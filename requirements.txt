@@ -4,6 +4,7 @@ safetensors
 python-multipart
 Pillow
 Jinja2
+pluggy
 
 torch
 

@@ -10,6 +10,7 @@ MyLora provides a modern web interface to manage LoRA model files (`.safetensors
 - **Category management** – create and assign categories with just a few clicks.
 - **Local migration** – scripts are included to import existing collections or migrate old category files.
 - **Responsive design** – works great on desktop and mobile.
+- **Plugin system** – extend the app via Pluggy-powered plugins that can be enabled in the web UI.
 
 ## Quick setup
 
@@ -68,6 +69,9 @@ Guided upload page that first asks for the `.safetensors` file and then its prev
 Manage all categories in one place. Create new entries and remove unused ones. A table lists how many LoRAs are assigned to each category.
 
 ![grafik](https://github.com/user-attachments/assets/28cfaab7-c6fc-471e-8ef1-87a21fcae47f)
+
+### Plugin admin `/plugins`
+Enable or disable installed plugins. New plugins placed in the `plugins/` directory are discovered automatically and can be activated from here.
 
 ## Bulk import
 Use `bulk_import.py` to ingest an existing collection:

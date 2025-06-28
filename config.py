@@ -14,3 +14,6 @@ STATIC_DIR = BASE_DIR / "loradb" / "static"
 
 # Directory containing Jinja2 templates
 TEMPLATE_DIR = BASE_DIR / "loradb" / "templates"
+
+# Directory containing plugin folders
+PLUGINS_DIR = BASE_DIR / "plugins"

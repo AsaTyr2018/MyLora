@@ -1,0 +1,5 @@
+{
+  "name": "Sample Plugin",
+  "description": "Adds a hello world route.",
+  "version": "0.1"
+}
