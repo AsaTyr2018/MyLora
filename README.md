@@ -10,7 +10,7 @@ MyLora provides a modern web interface to manage LoRA model files (`.safetensors
 - **Category management** – create and assign categories with just a few clicks.
 - **Local migration** – scripts are included to import existing collections or migrate old category files.
 - **Responsive design** – works great on desktop and mobile.
-- **Plugin system** – extend the app via Pluggy-powered plugins that can be enabled in the web UI.
+- **Plugin system** – extend the app via Pluggy-powered plugins that can be enabled in the web UI. See [docs/plugins.md](docs/plugins.md) for details.
 
 ## Quick setup
 
