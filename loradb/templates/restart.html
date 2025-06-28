@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex flex-column align-items-center mt-5">
+  <h1 class="display-4 mb-3">Reloading the Universe...</h1>
+  <p class="lead">Hold on tight while everything realigns.</p>
+  <div class="spinner-border text-info mt-4" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+</div>
+<script>
+  setTimeout(function(){ window.location.href = '/'; }, 5000);
+</script>
+{% endblock %}

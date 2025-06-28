@@ -229,6 +229,13 @@ async def refresh_server(request: Request):
     try:
         subprocess.Popen([str(script)])
     except Exception:
+        if 'text/html' in request.headers.get('accept', ''):
+            template = frontend.env.get_template('restart.html')
+            return template.render(title='Restarting')
         return {"error": "failed to execute watchdog"}
+
+    if 'text/html' in request.headers.get('accept', ''):
+        template = frontend.env.get_template('restart.html')
+        return template.render(title='Restarting')
     return {"status": "restarting"}
 
