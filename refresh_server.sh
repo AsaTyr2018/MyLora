@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
-# Restart the MyLora application by killing the running process and
-# starting ``main.py`` again. This works when the server was launched
-# manually without a systemd service.
+# Display a restart page on port 5001 while the main server reloads.
 
 set -e
 
-# Resolve the directory of this script so we can locate ``main.py`` even
-# when called from elsewhere.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_MAIN="$SCRIPT_DIR/main.py"
+RESTART_SERVER="$SCRIPT_DIR/restart_server.py"
 PYTHON_BIN="${PYTHON:-python3}"
 
-# Find running main.py processes and terminate them. ``pkill`` returns a
-# non-zero exit status if no process matched, so ignore failures.
-pkill -f "$APP_MAIN" 2>/dev/null || true
+# Launch temporary restart server
+nohup "$PYTHON_BIN" "$RESTART_SERVER" >/dev/null 2>&1 &
+RESTART_PID=$!
 
-# Give the processes a moment to shut down cleanly.
+# Give the API time to redirect to the restart page
+sleep 1
+
+# Stop running main.py instances (ignore failure when not running)
+pkill -f "$APP_MAIN" 2>/dev/null || true
 sleep 2
 
-# Restart the application in the background. ``nohup`` ensures the
-# process keeps running if the calling shell exits.
+# Relaunch the application
 nohup "$PYTHON_BIN" "$APP_MAIN" >/dev/null 2>&1 &
+MAIN_PID=$!
+
+# Wait for the main server to come back up
+sleep 5
+
+# Shutdown temporary restart server
+kill $RESTART_PID
 
 echo "MyLora restarted"

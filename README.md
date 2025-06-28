@@ -71,7 +71,7 @@ Manage all categories in one place. Create new entries and remove unused ones. A
 ![grafik](https://github.com/user-attachments/assets/28cfaab7-c6fc-471e-8ef1-87a21fcae47f)
 
 ### Plugin admin `/plugins`
-Toggle installed plugins on or off. The selected state is stored in the database and is applied when the server is refreshed. The refresh action now calls `refresh_server.sh`, which restarts the application by killing the running process and launching `main.py` again. Use the **Refresh Server** button after changing plugin state.
+Toggle installed plugins on or off. The selected state is stored in the database and is applied when the server is refreshed. Hitting the **Refresh Server** button now starts a tiny helper server on port `5001` that shows a restart page while the main process reloads. After a few seconds the helper stops and the browser returns to the main site.
 
 ## Bulk import
 Use `bulk_import.py` to ingest an existing collection:

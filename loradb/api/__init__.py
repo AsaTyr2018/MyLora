@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
+from starlette.datastructures import URL
 from pathlib import Path
 import random
 import subprocess
@@ -234,8 +235,10 @@ async def refresh_server(request: Request):
             return template.render(title='Restarting')
         return {"error": "failed to execute watchdog"}
 
+    # For HTML clients redirect to the temporary restart server on port 5001
     if 'text/html' in request.headers.get('accept', ''):
-        template = frontend.env.get_template('restart.html')
-        return template.render(title='Restarting')
+        url = URL(str(request.base_url)).replace(port=5001)
+        return RedirectResponse(url=str(url), status_code=303)
+
     return {"status": "restarting"}
 
