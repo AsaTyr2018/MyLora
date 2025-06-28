@@ -71,7 +71,7 @@ Manage all categories in one place. Create new entries and remove unused ones. A
 ![grafik](https://github.com/user-attachments/assets/28cfaab7-c6fc-471e-8ef1-87a21fcae47f)
 
 ### Plugin admin `/plugins`
-Enable or disable installed plugins. New plugins placed in the `plugins/` directory are discovered automatically and can be activated from here.
+Toggle installed plugins on or off. The selected state is stored in the database and is applied when the server is refreshed. Use the **Refresh Server** button on this page after changing any plugin state.
 
 ## Bulk import
 Use `bulk_import.py` to ingest an existing collection:

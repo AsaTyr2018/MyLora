@@ -207,7 +207,7 @@ async def plugin_admin():
 
 @router.post('/enable_plugin')
 async def enable_plugin(request: Request, plugin: str = Form(...)):
-    plugin_manager.enable(plugin, request.app)
+    plugin_manager.enable(plugin)
     if 'text/html' in request.headers.get('accept', ''):
         return RedirectResponse(url='/plugins', status_code=303)
     return {'status': 'enabled', 'plugin': plugin}
@@ -215,7 +215,16 @@ async def enable_plugin(request: Request, plugin: str = Form(...)):
 
 @router.post('/disable_plugin')
 async def disable_plugin(request: Request, plugin: str = Form(...)):
-    plugin_manager.disable(plugin, request.app)
+    plugin_manager.disable(plugin)
     if 'text/html' in request.headers.get('accept', ''):
         return RedirectResponse(url='/plugins', status_code=303)
     return {'status': 'disabled', 'plugin': plugin}
+
+
+@router.post('/refresh_server')
+async def refresh_server(request: Request):
+    """Restart the application process."""
+    request.app.state._refreshing = True
+    import os
+    os._exit(0)
+
