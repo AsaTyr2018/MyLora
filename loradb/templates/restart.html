@@ -8,6 +8,9 @@
   </div>
 </div>
 <script>
-  setTimeout(function(){ window.location.href = '/'; }, 5000);
+  setTimeout(function(){
+    var target = window.location.protocol + '//' + window.location.hostname + ':5000/';
+    window.location.href = target;
+  }, 5000);
 </script>
 {% endblock %}
