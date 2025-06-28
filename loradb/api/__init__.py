@@ -9,6 +9,7 @@ from ..agents.uploader_agent import UploaderAgent
 from ..agents.metadata_extractor_agent import MetadataExtractorAgent
 from ..agents.indexing_agent import IndexingAgent
 from ..agents.frontend_agent import FrontendAgent
+from ..plugins.manager import PluginManager
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ extractor = MetadataExtractorAgent()
 indexer = IndexingAgent()
 frontend = FrontendAgent(Path(uploader.upload_dir), Path(config.TEMPLATE_DIR))
 uploader.frontend = frontend
+plugin_manager = PluginManager(Path(config.PLUGINS_DIR))
 
 
 @router.get('/upload', response_class=HTMLResponse)
@@ -193,3 +195,27 @@ async def delete_files(request: Request):
     if 'text/html' in request.headers.get('accept', ''):
         return RedirectResponse(url='/grid', status_code=303)
     return {'deleted': deleted}
+
+
+@router.get('/plugins', response_class=HTMLResponse)
+async def plugin_admin():
+    """List discovered plugins and their status."""
+    plugins = plugin_manager.discover()
+    template = frontend.env.get_template('plugin_admin.html')
+    return template.render(title='Plugin Administration', plugins=plugins)
+
+
+@router.post('/enable_plugin')
+async def enable_plugin(request: Request, plugin: str = Form(...)):
+    plugin_manager.enable(plugin, request.app)
+    if 'text/html' in request.headers.get('accept', ''):
+        return RedirectResponse(url='/plugins', status_code=303)
+    return {'status': 'enabled', 'plugin': plugin}
+
+
+@router.post('/disable_plugin')
+async def disable_plugin(request: Request, plugin: str = Form(...)):
+    plugin_manager.disable(plugin)
+    if 'text/html' in request.headers.get('accept', ''):
+        return RedirectResponse(url='/plugins', status_code=303)
+    return {'status': 'disabled', 'plugin': plugin}

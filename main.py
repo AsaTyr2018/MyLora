@@ -5,7 +5,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 import config
-from loradb.api import router as api_router, indexer
+from loradb.api import router as api_router, indexer, plugin_manager
 
 app = FastAPI(title="LoRA Database")
 
@@ -17,6 +17,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 env = Environment(loader=FileSystemLoader(config.TEMPLATE_DIR))
 
 app.include_router(api_router)
+plugin_manager.load_enabled(app)
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
