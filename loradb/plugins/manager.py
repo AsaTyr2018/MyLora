@@ -100,11 +100,17 @@ class PluginManager:
         self.loaded.pop(plugin_id, None)
         self.loaded_routes.pop(plugin_id, None)
 
-    def enable(self, plugin_id: str) -> None:
+    def enable(self, plugin_id: str, app: FastAPI | None = None) -> None:
+        """Enable ``plugin_id`` and load it immediately if ``app`` is provided."""
         self.status[plugin_id] = True
         self._save_status()
+        if app is not None:
+            self._load_plugin(plugin_id, app)
 
-    def disable(self, plugin_id: str) -> None:
+    def disable(self, plugin_id: str, app: FastAPI | None = None) -> None:
+        """Disable ``plugin_id`` and unload it from ``app`` if loaded."""
         self.status[plugin_id] = False
         self._save_status()
+        if app is not None:
+            self._unload_plugin(plugin_id, app)
 

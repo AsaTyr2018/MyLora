@@ -209,7 +209,7 @@ async def plugin_admin():
 
 @router.post('/enable_plugin')
 async def enable_plugin(request: Request, plugin: str = Form(...)):
-    plugin_manager.enable(plugin)
+    plugin_manager.enable(plugin, request.app)
     if 'text/html' in request.headers.get('accept', ''):
         return RedirectResponse(url='/plugins', status_code=303)
     return {'status': 'enabled', 'plugin': plugin}
@@ -217,7 +217,7 @@ async def enable_plugin(request: Request, plugin: str = Form(...)):
 
 @router.post('/disable_plugin')
 async def disable_plugin(request: Request, plugin: str = Form(...)):
-    plugin_manager.disable(plugin)
+    plugin_manager.disable(plugin, request.app)
     if 'text/html' in request.headers.get('accept', ''):
         return RedirectResponse(url='/plugins', status_code=303)
     return {'status': 'disabled', 'plugin': plugin}
