@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pathlib import Path
 import random
+import subprocess
 
 import config
 
@@ -223,13 +224,11 @@ async def disable_plugin(request: Request, plugin: str = Form(...)):
 
 @router.post('/refresh_server')
 async def refresh_server(request: Request):
-    """Restart the application process gracefully."""
-    request.app.state._refreshing = True
-    server = getattr(request.app.state, "uvicorn_server", None)
-    if server is not None:
-        import signal
-        server.handle_exit(signal.SIGINT, None)
-    else:
-        import os
-        os._exit(0)
+    """Restart the server using the external watchdog script."""
+    script = config.REFRESH_SCRIPT
+    try:
+        subprocess.Popen([str(script)])
+    except Exception:
+        return {"error": "failed to execute watchdog"}
+    return {"status": "restarting"}
 
