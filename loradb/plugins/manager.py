@@ -17,6 +17,10 @@ class HookSpecs:
     def setup(self, app: FastAPI) -> None:
         """Called when the plugin is loaded."""
 
+    @hookspec
+    def teardown(self, app: FastAPI) -> None:
+        """Called when the plugin is unloaded."""
+
 
 class PluginManager:
     def __init__(self, plugins_dir: Path) -> None:
@@ -74,13 +78,20 @@ class PluginManager:
         self.manager.register(mod, plugin_id)
         self.loaded[plugin_id] = mod
         existing = list(app.router.routes)
-        self.manager.hook.setup(app=app)
+        if hasattr(mod, "setup"):
+            mod.setup(app)
         new_routes = [r for r in app.router.routes if r not in existing]
         self.loaded_routes[plugin_id] = new_routes
 
     def _unload_plugin(self, plugin_id: str, app: FastAPI | None) -> None:
         if plugin_id not in self.loaded:
             return
+        mod = self.loaded[plugin_id]
+        if hasattr(mod, "teardown"):
+            try:
+                mod.teardown(app)
+            except Exception:
+                pass
         if app is not None:
             for route in self.loaded_routes.get(plugin_id, []):
                 if route in app.router.routes:
