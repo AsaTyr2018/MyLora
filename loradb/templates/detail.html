@@ -53,7 +53,7 @@
   <div class="preview-grid mb-3">
     {% for img in entry.previews %}
     <div class="position-relative">
-      <a href="{{ img }}" target="_blank"><img src="{{ img }}" class="img-fluid rounded"></a>
+      <img src="{{ img }}" class="img-fluid rounded" alt="preview">
       <input class="form-check-input position-absolute top-0 end-0 m-1" type="checkbox" name="files" value="{{ img|replace('/uploads/','') }}">
     </div>
     {% endfor %}
@@ -63,7 +63,7 @@
 <div class="preview-grid mb-3">
   {% for img in entry.previews %}
   <div class="position-relative">
-    <a href="{{ img }}" target="_blank"><img src="{{ img }}" class="img-fluid rounded"></a>
+    <img src="{{ img }}" class="img-fluid rounded" alt="preview">
   </div>
   {% endfor %}
 </div>
@@ -77,4 +77,20 @@
     </tbody>
   </table>
 </div>
+<!-- Lightbox Modal for preview images -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center position-relative p-0">
+        <button class="btn btn-secondary position-absolute top-50 start-0 translate-middle-y" id="prevBtn" type="button">&#8249;</button>
+        <img id="modalImage" src="" class="img-fluid rounded" alt="preview">
+        <button class="btn btn-secondary position-absolute top-50 end-0 translate-middle-y" id="nextBtn" type="button">&#8250;</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/static/lightbox.js"></script>
 {% endblock %}
