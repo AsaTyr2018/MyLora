@@ -1,0 +1,9 @@
+version: '3'
+services:
+  mylora:
+    build: .
+    ports:
+      - '5000:5000'
+    volumes:
+      - ../loradb/uploads:/app/loradb/uploads
+      - ../loradb/search_index:/app/loradb/search_index
