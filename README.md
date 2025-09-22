@@ -24,6 +24,12 @@ Link -> https://www.turtlesai.com/en/pages-2946/mylora-intelligent-and-comprehen
 - **Themed error pages** – friendly 404 page and access denied view.
 - **Responsive design** – works great on desktop and mobile.
 
+## Documentation
+
+- [API usage overview](docs/api_usage.md) – quick start queries for automation scripts.
+- [Detailed API reference](docs/api_reference.md) – authentication, inputs, and status codes for every endpoint.
+- [Upload workflow guide](docs/upload_guide.md) – recommended process for preparing assets.
+
 ## Coming soon: Plugin support (Delayed)
 
 MyLora is evolving into a modular platform!  
