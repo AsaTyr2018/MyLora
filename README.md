@@ -108,6 +108,19 @@ Use `bulk_import.py` to ingest an existing collection:
 python bulk_import.py SAFETENSORS_DIR IMAGES_DIR [CATEGORIES_DIR]
 ```
 
+## Offline export toolkit
+
+Use `export_loras.py` to mirror all models, previews, and tags for offline use:
+
+1. Configure `MYLORA_HOST`, `MYLORA_USERNAME`, and `MYLORA_PASSWORD` at the top of the script.
+2. Run the exporter with the target directory for your archive.
+
+```bash
+python export_loras.py /path/to/export
+```
+
+Each LoRA is stored in its own folder containing the `.safetensors` file and a `<name>-Images` subdirectory with previews. A generated `exported_loras.txt` lists every successfully exported model along with its tags and categories.
+
 ## Category migration
 Convert old `<name>.txt` files in `loradb/uploads` to the new database format with:
 
