@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
@@ -60,13 +61,58 @@ class PreviewImageParser(HTMLParser):
 class MyLoraExporter:
     """Export LoRA models and preview images from a MyLora instance."""
 
-    def __init__(self, base_url: str, username: str, password: str) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        username: str,
+        password: str,
+        *,
+        timeout: float = 30.0,
+        retries: int = 3,
+        retry_backoff: float = 2.0,
+    ) -> None:
         if not base_url:
             raise ValueError("MYLORA_HOST is not configured")
+        if retries < 1:
+            raise ValueError("retries must be at least 1")
+        if timeout <= 0:
+            raise ValueError("timeout must be greater than 0")
+        if retry_backoff < 1.0:
+            raise ValueError("retry_backoff must be >= 1.0")
+
         self.base_url = base_url.rstrip("/")
         self.username = username
         self.password = password
-        self.client = httpx.Client(base_url=self.base_url, follow_redirects=False)
+        self.retries = retries
+        self.retry_backoff = retry_backoff
+        timeout_config = httpx.Timeout(timeout, connect=timeout, read=timeout, write=timeout)
+        self.client = httpx.Client(
+            base_url=self.base_url, follow_redirects=False, timeout=timeout_config
+        )
+
+    def _get_with_retry(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, object] | None = None,
+    ) -> httpx.Response:
+        """Issue a GET request and retry on read timeouts."""
+
+        last_exception: httpx.ReadTimeout | None = None
+        for attempt in range(1, self.retries + 1):
+            try:
+                return self.client.get(url, headers=headers, params=params)
+            except httpx.ReadTimeout as exc:
+                last_exception = exc
+                if attempt == self.retries:
+                    break
+                wait_time = self.retry_backoff ** (attempt - 1)
+                time.sleep(wait_time)
+
+        raise RuntimeError(
+            f"Request to {url} timed out after {self.retries} attempts"
+        ) from last_exception
 
     def login(self) -> None:
         """Authenticate against the MyLora instance if credentials are provided."""
@@ -83,13 +129,16 @@ class MyLoraExporter:
                 "Login failed – verify MYLORA_USERNAME and MYLORA_PASSWORD"
             )
 
-    def fetch_entries(self, limit: int = 100) -> list[LoraEntry]:
-        """Return all LoRA entries available in MyLora."""
+    def iter_entries(self, limit: int = 100) -> Iterable[LoraEntry]:
+        """Yield LoRA entries in batches to avoid loading the full catalogue."""
 
-        entries: dict[str, LoraEntry] = {}
+        if limit < 1:
+            raise ValueError("limit must be at least 1")
+
+        seen: set[str] = set()
         offset = 0
         while True:
-            resp = self.client.get(
+            resp = self._get_with_retry(
                 "/grid_data",
                 params={"q": "*", "limit": limit, "offset": offset},
                 headers={"Accept": "application/json"},
@@ -104,25 +153,33 @@ class MyLoraExporter:
                 filename = row.get("filename")
                 if not filename:
                     continue
+                if filename in seen:
+                    continue
                 entry = LoraEntry(
                     filename=filename,
                     name=row.get("name") or Path(filename).stem,
                     tags=row.get("tags") or "",
                     categories=list(row.get("categories") or []),
                 )
-                entries[filename] = entry
+                seen.add(filename)
+                yield entry
             if len(payload) < limit:
                 break
             offset += limit
-        return list(entries.values())
+
+    def fetch_entries(self, limit: int = 100) -> list[LoraEntry]:
+        """Return all LoRA entries available in MyLora."""
+
+        return list(self.iter_entries(limit=limit))
 
     def download_lora(self, entry: LoraEntry, target_dir: Path) -> Path:
         """Download the `.safetensors` file for ``entry`` into ``target_dir``."""
 
         target_dir.mkdir(parents=True, exist_ok=True)
         lora_path = target_dir / entry.filename
-        resp = self.client.get(
-            f"/uploads/{entry.filename}", headers={"Accept": "application/octet-stream"}
+        resp = self._get_with_retry(
+            f"/uploads/{entry.filename}",
+            headers={"Accept": "application/octet-stream"},
         )
         resp.raise_for_status()
         lora_path.write_bytes(resp.content)
@@ -131,7 +188,7 @@ class MyLoraExporter:
     def fetch_preview_urls(self, filename: str) -> list[str]:
         """Retrieve preview image URLs for ``filename`` by parsing the detail view."""
 
-        resp = self.client.get(f"/detail/{filename}", headers={"Accept": "text/html"})
+        resp = self._get_with_retry(f"/detail/{filename}", headers={"Accept": "text/html"})
         if resp.status_code == 303:
             raise RuntimeError("Preview access denied – check permissions.")
         resp.raise_for_status()
@@ -147,7 +204,7 @@ class MyLoraExporter:
         for url in urls:
             absolute = urljoin(self.base_url + "/", url.lstrip("/"))
             filename = Path(url).name
-            resp = self.client.get(absolute, headers={"Accept": "image/*"})
+            resp = self._get_with_retry(absolute, headers={"Accept": "image/*"})
             if resp.status_code == 404:
                 continue
             resp.raise_for_status()
@@ -177,19 +234,65 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Target directory where the export should be stored",
     )
+    parser.add_argument(
+        "--host",
+        default=MYLORA_HOST,
+        help="MyLora base URL (defaults to MYLORA_HOST)",
+    )
+    parser.add_argument(
+        "--username",
+        default=MYLORA_USERNAME,
+        help="MyLora username (defaults to MYLORA_USERNAME)",
+    )
+    parser.add_argument(
+        "--password",
+        default=MYLORA_PASSWORD,
+        help="MyLora password (defaults to MYLORA_PASSWORD)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=30.0,
+        help="Timeout in seconds for HTTP requests (default: 30)",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=3,
+        help="Number of retry attempts when a request times out (default: 3)",
+    )
+    parser.add_argument(
+        "--retry-backoff",
+        type=float,
+        default=2.0,
+        help="Exponential backoff factor between retries (default: 2.0)",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Number of entries to request per batch during export (default: 100)",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     destination: Path = args.destination
-    exporter = MyLoraExporter(MYLORA_HOST, MYLORA_USERNAME, MYLORA_PASSWORD)
+    exporter = MyLoraExporter(
+        args.host,
+        args.username,
+        args.password,
+        timeout=args.timeout,
+        retries=args.retries,
+        retry_backoff=args.retry_backoff,
+    )
     exporter.login()
-    entries = exporter.fetch_entries()
-    total_online = len(entries)
     successful: list[LoraEntry] = []
+    total_online = 0
 
-    for entry in entries:
+    for entry in exporter.iter_entries(limit=args.batch_size):
+        total_online += 1
         lora_dir = destination / entry.stem
         images_dir = lora_dir / f"{entry.stem}-Images"
         try:

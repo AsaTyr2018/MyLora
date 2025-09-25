@@ -112,14 +112,20 @@ python bulk_import.py SAFETENSORS_DIR IMAGES_DIR [CATEGORIES_DIR]
 
 Use `export_loras.py` to mirror all models, previews, and tags for offline use:
 
-1. Configure `MYLORA_HOST`, `MYLORA_USERNAME`, and `MYLORA_PASSWORD` at the top of the script.
-2. Run the exporter with the target directory for your archive.
+1. Either configure `MYLORA_HOST`, `MYLORA_USERNAME`, and `MYLORA_PASSWORD` at the top of the script **or** override them via command-line flags.
+2. Run the exporter with the target directory for your archive. Adjust the timeout, retry behaviour, and batch size to match your server speed if necessary.
 
 ```bash
-python export_loras.py /path/to/export
+python export_loras.py /path/to/export \
+  --host http://127.0.0.1:5000 \
+  --username mylora_admin \
+  --password secret \
+  --timeout 60 \
+  --retries 5 \
+  --batch-size 250
 ```
 
-Each LoRA is stored in its own folder containing the `.safetensors` file and a `<name>-Images` subdirectory with previews. A generated `exported_loras.txt` lists every successfully exported model along with its tags and categories.
+The exporter walks the catalogue sequentially, requesting manageable batches so that thousands of LoRAs can be mirrored without keeping the entire listing in memory. Requests that run into read timeouts are retried using an exponential backoff, helping the process succeed even on slower connections. Each LoRA is stored in its own folder containing the `.safetensors` file and a `<name>-Images` subdirectory with previews. A generated `exported_loras.txt` lists every successfully exported model along with its tags and categories.
 
 ## Category migration
 Convert old `<name>.txt` files in `loradb/uploads` to the new database format with:
